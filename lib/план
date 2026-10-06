@@ -1,0 +1,35 @@
+lib/
+├── main.dart                    Точка входа. Запускает Hive, DI, init форматтеров, runApp(App())
+├── app.dart                     MaterialApp: тема, title, home: BlocProvider + HomeScreen
+│
+├── core/
+│   ├── di/
+│   │   └── injection.dart       Настройка GetIt. Регистрирует Hive box, NotificationService, ReminderRepository, ReminderBloc
+│   ├── theme/
+│   │   └── app_theme.dart       Тема приложения: цвета, шрифты, стили кнопок, поля ввода. Только светлая
+│   ├── utils/
+│   │   └── date_formatter.dart  Форматирование даты через intl. Например: "10 окт, 14:30". Один формат на всё приложение
+│   └── extensions/
+│       └── context_extensions.dart  Расширения BuildContext. Например: context.showMessage('Сохранено') вместо ScaffoldMessenger.of(context).showSnackBar(...)
+│
+├── data/
+│   ├── models/
+│   │   ├── reminder_model.dart      Модель напоминания: id, title, dateTime, isDone. С @HiveType, @HiveField. Именно это сохраняется в Hive
+│   │   └── reminder_model.g.dart    Генерируется build_runner. Адаптер Hive. Руками не трогать
+│   └── repositories/
+│       └── reminder_repository.dart Интерфейс ReminderRepository + класс ReminderRepositoryImpl. Методы: getReminders, addReminder, deleteReminder, toggleDone. Внутри: Hive box + NotificationService. BLoC знает только об интерфейсе
+│
+├── services/
+│   └── notifications/
+│       └── notification_service.dart  Обёртка над flutter_local_notifications. Один класс, без абстракции. Методы: init(), requestPermissions(), scheduleAt(), cancel(), cancelAll(). Не знает про ReminderModel — работает с примитивами
+│
+└── features/reminders/
+    ├── bloc/
+    │   ├── reminder_event.dart   События BLoC. LoadReminders, AddReminder, DeleteReminder, ToggleDone. Наследуются от Equatable
+    │   ├── reminder_state.dart   Состояния BLoC. ReminderInitial, ReminderLoading, ReminderLoaded(list), ReminderError(message). Тоже Equatable
+    │   └── reminder_bloc.dart    Логика. Событие → вызов репозитория → новое состояние. Никакого Flutter внутри. Только ReminderRepository как зависимость
+    └── view/
+        ├── home_screen.dart      Главный экран. BlocBuilder слушает ReminderBloc, показывает список или индикатор. Кнопка "+" открывает диалог. Свайп/кнопка удаляет
+        └── widgets/
+            //(лишний)├── reminder_tile.dart       Одна строка списка. Показывает текст, дату, чекбокс/кнопку удаления. Переиспользуемый виджет
+            └── add_reminder_dialog.dart Диалог добавления. Поля: текст, дата, время. Кнопки "Отмена"/"Сохранить". Возвращает данные наверх, HomeScreen отправляет событие в BLoC
